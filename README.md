@@ -1,11 +1,13 @@
-# Prerequisites:
+# migrate tool  migrate project between gitlab server
+
+## Prerequisites:
 
 ### 1. Windows operating system.
 ### 2. Need to install Git client.
 ### 3. Need .NET 6.0.
 ### 4. Account and password for both gitSservers, prepare Access Tokens for both servers.
 
-# Instructions for Use
+## Instructions for Use
 ### Step 1: Enter the source server address and access token, then click the 'checksrcserver' button. The program will read all groups and all projects under the groups from the source server and display them in the left list.
 
 ### Step 2: Enter the destination server address and access token, then click the 'checkdestserver' button. The program will read all groups from the destination server and display them in the right list. Note: Items starting with 'G' in the list indicate that it is a group, and items starting with 'P' indicate that it is a project.
