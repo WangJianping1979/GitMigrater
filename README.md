@@ -1,7 +1,7 @@
 # Prerequisites:
 
 ### 1. Windows operating system.
-### 2. Need to install Git.
+### 2. Need to install Git client.
 ### 3. Need .NET 6.0.
 ### 4. Account and password for both gitSservers, prepare Access Tokens for both servers.
 
