@@ -51,6 +51,7 @@
          label6 = new Label();
          lb_loadmsg = new Label();
          lb_msg = new Label();
+         btn_create_groups = new Button();
          groupBox1.SuspendLayout();
          ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
          splitContainer1.Panel1.SuspendLayout();
@@ -266,17 +267,31 @@
          // 
          // lb_msg
          // 
+         lb_msg.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
          lb_msg.AutoSize = true;
          lb_msg.Location = new Point(5, 622);
          lb_msg.Name = "lb_msg";
          lb_msg.Size = new Size(0, 28);
          lb_msg.TabIndex = 16;
          // 
+         // btn_create_groups
+         // 
+         btn_create_groups.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+         btn_create_groups.Location = new Point(909, 607);
+         btn_create_groups.Name = "btn_create_groups";
+         btn_create_groups.Size = new Size(196, 40);
+         btn_create_groups.TabIndex = 17;
+         btn_create_groups.Text = "createGroups";
+         btn_create_groups.UseVisualStyleBackColor = true;
+         btn_create_groups.Visible = false;
+         btn_create_groups.Click += btn_create_groups_Click;
+         // 
          // Form1
          // 
          AutoScaleDimensions = new SizeF(13F, 28F);
          AutoScaleMode = AutoScaleMode.Font;
          ClientSize = new Size(1281, 904);
+         Controls.Add(btn_create_groups);
          Controls.Add(lb_msg);
          Controls.Add(lb_loadmsg);
          Controls.Add(label6);
@@ -323,5 +338,6 @@
       private Label label6;
       private Label lb_loadmsg;
       private Label lb_msg;
+      private Button btn_create_groups;
    }
 }

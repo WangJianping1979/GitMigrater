@@ -17,6 +17,10 @@ namespace GitMigrater.utils
          mqservice.OnMessage += new MessageQueueService.DelegateOnMessage(writeToFile);
          mqservice.StartService();
       }
+      public static void Dispose()
+      {
+         tracerInstance.mqservice.stopService();
+      }  
       /// <summary>
       /// 静态方法：写日志
       /// </summary>

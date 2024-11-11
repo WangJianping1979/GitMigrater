@@ -1,5 +1,7 @@
 using GitMigrater.API;
 using GitMigrater.API.DTO.gitlab;
+using GitMigrater.utils;
+using GitMigrater.utils.que;
 using Newtonsoft.Json;
 using System.Linq.Expressions;
 
@@ -176,7 +178,8 @@ namespace GitMigrater
          {
             foreach (BaseGroupAndProjectObject subBaseObject in baseObject.SubGroupAndProjectObjects)
             {
-               TreeNode subTreeNode = new TreeNode((subBaseObject is Group ? "G:" : "P:") + subBaseObject.Name);
+               TreeNode subTreeNode = new TreeNode((subBaseObject is Group ? "G:" : "P:") + subBaseObject.Name
+                  + (subBaseObject is Group ? "(" + subBaseObject.SubGroupAndProjectObjects.Count + ")" : ""));
                subTreeNode.Tag = subBaseObject;
                node.Nodes.Add(subTreeNode);
                buildNods(subTreeNode, subBaseObject);
@@ -207,7 +210,7 @@ namespace GitMigrater
                tv_tree_src.Nodes.Clear();
                foreach (BaseGroupAndProjectObject baseObject in groups)
                {
-                  TreeNode node = new TreeNode((baseObject is Group ? "G:" : "P:") + baseObject.Name);
+                  TreeNode node = new TreeNode((baseObject is Group ? "G:" : "P:") + baseObject.Name + (baseObject is Group ? "(" + baseObject.SubGroupAndProjectObjects.Count + ")" : ""));
                   node.Tag = baseObject;
                   buildNods(node, baseObject);
                   tv_tree_src.Nodes.Add(node);
@@ -228,7 +231,7 @@ namespace GitMigrater
                tv_tree_dest.Nodes.Clear();
                foreach (BaseGroupAndProjectObject baseObject in groups2)
                {
-                  TreeNode node = new TreeNode((baseObject is Group ? "G:" : "P:") + baseObject.Name);
+                  TreeNode node = new TreeNode((baseObject is Group ? "G:" : "P:") + baseObject.Name + (baseObject is Group ? "(" + baseObject.SubGroupAndProjectObjects.Count + ")" : ""));
                   node.Tag = baseObject;
                   buildNods(node, baseObject);
                   tv_tree_dest.Nodes.Add(node);
@@ -249,21 +252,32 @@ namespace GitMigrater
       {
          GitLabServerApi srcApi = new GitLabServerApi(src_url, src_at);
          GitLabServerApi destApi = new GitLabServerApi(dest_url, dest_at);
+         Random random = new Random();
+         
          //   //1¡¢ git clone --bare oldurl
-         showLoadMsg("Downloading project " + project.Name);
-         srcApi.DownloadProject(project.PathWithNamespace);
+         showLoadMsg("(" + currentMigrate + "/" + migrateCount + ")Downloading project " + project.Name);
+         string folder = project.Name+System.DateTime.Now.ToString("yyyyMMddHHmmssfff");
+         srcApi.DownloadProject(project.PathWithNamespace, folder);
          //   //2¡¢ create project on new server
-         destApi.CreateProject(project.Name, project.Description == null ? "" : project.Description, group.Id.ToString());
+         destApi.CreateProject(project.Name, project.Description == null ? "" : project.Description, group.Id.ToString(),project.PathWithNamespace.ToLower().StartsWith(group.Path.ToLower())?null:project.PathWithNamespace.Replace("/","-"));
          //   //3¡¢ git push --bare new url
-         showLoadMsg("Uploading project " + project.Name);
-         destApi.UploadProject(project.Name, group.FullPath);
+         showLoadMsg("(" + currentMigrate + "/" + migrateCount + ")Uploading project " + project.Name);
+         destApi.UploadProject(project.Name, group.FullPath, project.PathWithNamespace.ToLower().StartsWith(group.Path.ToLower()) ? null : project.PathWithNamespace.Replace("/", "-"), folder);
+         showLoadMsg("(" + currentMigrate + "/" + migrateCount + ")delete temp folder of project " + project.Name);
+         destApi.DeleteTempfolder(folder);
       }
+      int migrateCount = 0;
+      int currentMigrate = 0;
       private void bgw_migrater_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
       {
+         migrateCount = 0;
+         currentMigrate = 0;
          if (src_group != null)
          {
+            migrateCount = src_group.SubGroupAndProjectObjects.Count;
             foreach (BaseGroupAndProjectObject baseObject in src_group.SubGroupAndProjectObjects)
             {
+               currentMigrate++;
                if (baseObject is Project)
                {
                   migrateProject(baseObject as Project, dest_group);
@@ -290,9 +304,23 @@ namespace GitMigrater
 
       private void Form1_FormClosing(object sender, FormClosingEventArgs e)
       {
-         bgw_src_checker.CancelAsync();
-         bgw_dest_checker.CancelAsync();
-         bgw_monitor.CancelAsync();
+         if (bgw_src_checker.IsBusy)
+         {
+            bgw_src_checker.CancelAsync();
+         }
+         if (bgw_dest_checker.IsBusy)
+         {
+            bgw_dest_checker.CancelAsync();
+         }
+         if (bgw_monitor.IsBusy)
+         {
+            bgw_monitor.CancelAsync();
+         }
+         if (bgw_migrater.IsBusy)
+         {
+            bgw_migrater.CancelAsync();
+         }
+         Tracer.Dispose();
       }
 
       private void btn_migrate_Click(object sender, EventArgs e)
@@ -354,11 +382,24 @@ namespace GitMigrater
 
       private void bgw_migrater_RunWorkerCompleted(object sender, System.ComponentModel.RunWorkerCompletedEventArgs e)
       {
-         if(bgw_migrater.IsBusy == true)
+         if (bgw_migrater.IsBusy == true)
          {
             bgw_migrater.CancelAsync();
          }
          MessageBox.Show("Migrate Over");
+      }
+
+      private void btn_create_groups_Click(object sender, EventArgs e)
+      {
+         if (src_group != null && dest_group != null)
+         {
+            if (MessageBox.Show("a group named " + src_group.FullPath + " will be created on dest server,parents group is " + dest_group.FullPath, "Confirm", MessageBoxButtons.OKCancel) == DialogResult.OK)
+            {
+               GitLabServerApi destApi = new GitLabServerApi(dest_url, dest_at);
+               destApi.CreateGroup(dest_group.Id.ToString(), src_group.Name, src_group.Description, dest_group.FullPath + "/" + src_group.Path);
+            }
+
+         }
       }
    }
 }
